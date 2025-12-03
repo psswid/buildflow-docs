@@ -1,257 +1,289 @@
 # Contributing to BuildFlow
 
-First off, thank you for considering contributing to BuildFlow! It's people like you that make BuildFlow such a great tool for construction professionals.
+Thank you for considering contributing to BuildFlow! This document provides guidelines for contributing to the project.
 
-## 🎯 Code of Conduct
+---
 
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code.
+## 🎯 Project Focus
 
-## 🤔 How Can I Contribute?
+BuildFlow is a **portfolio project** demonstrating **enterprise-grade Laravel architecture** with Domain-Driven Design, Event-Driven Architecture, and CQRS patterns.
 
-### Reporting Bugs
+**Priority:** One framework (Laravel) implemented deeply with production-ready patterns.
 
-Before creating bug reports, please check existing issues to avoid duplicates. When you create a bug report, include as many details as possible:
+---
 
-- **Use a clear and descriptive title**
-- **Describe the exact steps to reproduce the problem**
-- **Provide specific examples** - Include links, screenshots, or code samples
-- **Describe the behavior you observed** and explain what's wrong
-- **Explain the behavior you expected** to see instead
-- **Include details about your configuration and environment**
+## 📚 Before You Start
 
-### Suggesting Features
+### Required Reading
 
-Feature suggestions are tracked as GitHub issues. When creating a feature suggestion:
+Please read these documents before contributing:
 
-- **Use a clear and descriptive title**
-- **Provide a detailed description** of the suggested feature
-- **Explain why this feature would be useful** to most BuildFlow users
-- **List some examples** of how the feature would be used
-- **Specify which tech stack** it applies to (or if it's stack-agnostic)
-
-### Pull Requests
-
-1. **Fork the repo** and create your branch from `main`
-2. **Make your changes** following our coding standards
-3. **Add tests** if you've added code that should be tested
-4. **Ensure the test suite passes**
-5. **Update documentation** if needed
-6. **Write a clear commit message** following our commit conventions
-7. **Submit the pull request**
-
-## 🏗️ Development Setup
+1. **[Project Overview](https://github.com/psswid/buildflow-docs/blob/main/PROJECT_OVERVIEW.md)** - Understand the vision
+2. **[Architecture](ARCHITECTURE.md)** - Understand the structure
+3. **[Domain Analysis](https://github.com/psswid/buildflow-docs/blob/main/DOMAIN_ANALYSIS_EVENT_STORMING.md)** - Understand the domain
+4. **Relevant ADRs** - Understand architectural decisions:
+   - [ADR-011: Domain-Driven Design](https://github.com/psswid/buildflow-docs/blob/main/docs/architecture/decisions/011-domain-driven-design.md)
+   - [ADR-012: Event-Driven Architecture](https://github.com/psswid/buildflow-docs/blob/main/docs/architecture/decisions/012-event-driven-architecture.md)
+   - [ADR-013: CQRS Basic](https://github.com/psswid/buildflow-docs/blob/main/docs/architecture/decisions/013-cqrs-basic.md)
 
 ### Prerequisites
 
-Choose your stack and follow the appropriate setup:
-
-#### Next.js Stack
-```bash
-# Requirements
-- Node.js 18+
-- pnpm 8+
+- PHP 8.3+
 - PostgreSQL 14+
+- Composer
+- Understanding of DDD concepts (Aggregates, Value Objects, Domain Events)
+- Understanding of Event-Driven Architecture
+- Familiarity with CQRS pattern
 
-# Setup
-cd apps/nextjs
-pnpm install
-cp .env.example .env
-pnpm dev
+---
+
+## 🛠️ Development Setup
+
+### 1. Fork and Clone
+
+```bash
+# Fork the repository on GitHub
+git clone https://github.com/YOUR_USERNAME/buildflow-laravel-api.git
+cd buildflow-laravel-api
+
+# Add upstream remote
+git remote add upstream https://github.com/psswid/buildflow-laravel-api.git
 ```
 
-#### Laravel Stack
-```bash
-# Requirements
-- PHP 8.2+
-- Composer 2+
-- MySQL 8+ or PostgreSQL 14+
+### 2. Install Dependencies
 
-# Setup
-cd apps/laravel
+```bash
 composer install
+npm install
+
 cp .env.example .env
 php artisan key:generate
+```
+
+### 3. Configure Database
+
+```bash
+# Create database
+createdb buildflow_dev
+
+# Update .env
+DB_CONNECTION=pgsql
+DB_DATABASE=buildflow_dev
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+
+# Run migrations
 php artisan migrate
+php artisan db:seed
+```
+
+### 4. Run Tests
+
+```bash
+# All tests should pass
+./vendor/bin/pest
+
+# Check coverage
+./vendor/bin/pest --coverage --min=80
+```
+
+### 5. Start Development Server
+
+```bash
 php artisan serve
 ```
 
-#### Symfony Stack
-```bash
-# Requirements
-- PHP 8.2+
-- Composer 2+
-- Symfony CLI
-- PostgreSQL 14+
+---
 
-# Setup
-cd apps/symfony
-composer install
-cp .env.example .env.local
-symfony console doctrine:migrations:migrate
-symfony serve
+## 📋 Contribution Guidelines
+
+### Code Organization
+
+BuildFlow follows **modular monolith** architecture with strict layer separation:
+
+```
+app/Domains/[Context]/
+├── Domain/           # Pure business logic (NO Laravel dependencies)
+├── Application/      # Use cases (Commands, Handlers, Queries)
+└── Infrastructure/   # Technical details (Laravel, DB, HTTP)
 ```
 
-## 📝 Coding Standards
+**Critical Rules:**
+- ✅ Domain layer must be pure PHP (no Laravel imports)
+- ✅ Business rules go in Aggregates, not Controllers
+- ✅ Use Value Objects for immutable concepts
+- ✅ Communicate between contexts via Domain Events
+- ✅ Test EVERYTHING (especially domain logic)
 
-### General Guidelines
+### Layer Responsibilities
 
-- Write clear, readable code
-- Add comments for complex logic
-- Keep functions small and focused
-- Follow DRY (Don't Repeat Yourself)
-- Write meaningful variable names
-
-### Stack-Specific Standards
-
-#### Next.js / TypeScript
-- Use TypeScript strict mode
-- Follow React best practices
-- Use Server Components by default
-- Implement proper error boundaries
-- Follow the Next.js App Router conventions
-
-```typescript
-// Good
-interface ClientFormProps {
-  client?: Client;
-  onSubmit: (data: ClientFormData) => Promise<void>;
-}
-
-export function ClientForm({ client, onSubmit }: ClientFormProps) {
-  // Implementation
-}
-
-// Bad
-export function ClientForm(props: any) {
-  // Implementation
-}
-```
-
-#### Laravel / PHP
-- Follow PSR-12 coding standard
-- Use type hints for parameters and return types
-- Write Eloquent models with proper relationships
-- Use Form Requests for validation
-- Follow Laravel naming conventions
-
+#### Domain Layer (Pure PHP)
 ```php
-// Good
-class Client extends Model
+// ✅ Good - Pure business logic
+class Quote extends AggregateRoot
 {
-    protected $fillable = ['name', 'email', 'phone'];
-    
-    public function quotes(): HasMany
+    public function accept(): void
     {
-        return $this->hasMany(Quote::class);
+        if (!$this->status->isSent()) {
+            throw new CanOnlyAcceptSentQuote();
+        }
+        
+        $this->status = QuoteStatus::accepted();
+        $this->record(new QuoteAccepted($this->id));
     }
 }
 
-// Bad
-class Client extends Model
+// ❌ Bad - Laravel dependency in domain
+use Illuminate\Support\Facades\DB;  // NO!
+
+class Quote extends Model  // NO! Use AggregateRoot
 {
-    // No type hints, no relationships defined
+    public function accept()
+    {
+        DB::transaction(function () {  // NO! Transactions are infrastructure concern
+            $this->status = 'accepted';
+            $this->save();
+        });
+    }
 }
 ```
 
-#### Symfony / PHP
-- Follow Symfony best practices
-- Use type hints and return types
-- Leverage Symfony's dependency injection
-- Use attributes for routing and validation
-- Follow Symfony directory structure
-
+#### Application Layer (Use Cases)
 ```php
-// Good
-#[Route('/clients', name: 'client_list')]
-public function list(ClientRepository $repository): Response
+// ✅ Good - Orchestration
+class AcceptQuoteHandler
 {
-    $clients = $repository->findAll();
-    return $this->render('client/list.html.twig', [
-        'clients' => $clients,
-    ]);
+    public function handle(AcceptQuote $command): void
+    {
+        $quote = $this->quotes->findById($command->quoteId);
+        
+        $quote->accept();  // Business logic in domain
+        
+        $this->quotes->save($quote);  // Infrastructure handles persistence
+    }
 }
 
-// Bad
-public function list()
+// ❌ Bad - Business logic in handler
+class AcceptQuoteHandler
 {
-    // No type hints, no return type
+    public function handle(AcceptQuote $command): void
+    {
+        $quote = Quote::find($command->quoteId);
+        
+        if ($quote->status !== 'sent') {  // NO! This is business logic
+            throw new Exception('Can only accept sent quotes');
+        }
+        
+        $quote->status = 'accepted';
+        $quote->save();
+    }
 }
 ```
 
-## 🧪 Testing
+#### Infrastructure Layer (Technical)
+```php
+// ✅ Good - Laravel concerns here
+class EloquentQuoteRepository implements QuoteRepository
+{
+    public function save(Quote $quote): void
+    {
+        DB::transaction(function () use ($quote) {
+            QuoteEloquentModel::updateOrCreate(
+                ['id' => $quote->id()->toString()],
+                $this->mapToDatabase($quote)
+            );
+            
+            foreach ($quote->releaseEvents() as $event) {
+                Event::dispatch($event);
+            }
+        });
+    }
+}
+```
 
-### Writing Tests
+---
 
-- Write tests for all new features
-- Maintain or improve code coverage
-- Test edge cases and error conditions
-- Use meaningful test names
+## 🧪 Testing Requirements
 
-#### Next.js Testing
-```typescript
-// Use Jest + React Testing Library
-import { render, screen } from '@testing-library/react';
-import { ClientForm } from './ClientForm';
+### Test Coverage
 
-describe('ClientForm', () => {
-  it('renders form fields correctly', () => {
-    render(<ClientForm />);
-    expect(screen.getByLabelText('Name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
-  });
+| Layer | Minimum Coverage | Priority |
+|-------|-----------------|----------|
+| Domain | 90% | Critical |
+| Application | 80% | High |
+| Infrastructure | 60% | Medium |
+
+### Test Types
+
+#### 1. Unit Tests (Domain)
+```php
+// tests/Unit/Domains/QuoteManagement/QuoteTest.php
+test('cannot send empty quote', function () {
+    $quote = Quote::createDraft(/* ... */);
+    
+    expect(fn() => $quote->send())
+        ->toThrow(CannotSendEmptyQuote::class);
 });
 ```
 
-#### Laravel Testing
+#### 2. Integration Tests (Application)
 ```php
-// Use PHPUnit + Laravel Testing
-public function test_can_create_client()
-{
-    $response = $this->post('/api/clients', [
-        'name' => 'Test Client',
-        'email' => 'test@example.com',
-    ]);
-
-    $response->assertStatus(201);
-    $this->assertDatabaseHas('clients', [
-        'email' => 'test@example.com',
-    ]);
-}
+// tests/Integration/Domains/QuoteManagement/AcceptQuoteFlowTest.php
+test('accepting quote creates project', function () {
+    Event::fake([QuoteAccepted::class, ProjectCreated::class]);
+    
+    $handler->handle(new AcceptQuote($quoteId));
+    
+    Event::assertDispatched(QuoteAccepted::class);
+    Event::assertDispatched(ProjectCreated::class);
+});
 ```
 
-#### Symfony Testing
+#### 3. Feature Tests (HTTP)
 ```php
-// Use PHPUnit + Symfony Testing
-public function testClientCreation(): void
-{
-    $client = static::createClient();
-    $client->request('POST', '/api/clients', [], [], [
-        'CONTENT_TYPE' => 'application/json',
-    ], json_encode([
-        'name' => 'Test Client',
-        'email' => 'test@example.com',
-    ]));
+// tests/Feature/Api/QuoteApiTest.php
+test('can accept quote via API', function () {
+    $response = $this->actingAs($user, 'api')
+        ->postJson("/api/quotes/{$quote->id}/accept");
+    
+    $response->assertStatus(200);
+});
+```
 
-    $this->assertResponseIsSuccessful();
-}
+#### 4. Architecture Tests
+```php
+// tests/Architecture/DomainLayerTest.php
+test('domain does not depend on infrastructure', function () {
+    expect('App\Domains\QuoteManagement\Domain')
+        ->not->toUse([
+            'Illuminate\Database',
+            'Illuminate\Http',
+        ]);
+});
 ```
 
 ### Running Tests
 
 ```bash
-# Next.js
-pnpm test
+# Run all tests
+./vendor/bin/pest
 
-# Laravel
-php artisan test
+# Run specific suite
+./vendor/bin/pest tests/Unit
+./vendor/bin/pest tests/Feature
 
-# Symfony
-php bin/phpunit
+# With coverage
+./vendor/bin/pest --coverage --min=80
+
+# Architecture tests (must pass!)
+./vendor/bin/pest tests/Architecture
 ```
 
-## 📋 Commit Message Guidelines
+---
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
+## 📝 Commit Guidelines
+
+### Commit Message Format
 
 ```
 <type>(<scope>): <subject>
@@ -261,158 +293,231 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 <footer>
 ```
 
-### Types
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting, etc.)
-- `refactor`: Code refactoring
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
+**Types:**
+- `feat` - New feature
+- `fix` - Bug fix
+- `refactor` - Code refactoring
+- `test` - Adding tests
+- `docs` - Documentation changes
+- `style` - Code style changes (formatting)
+- `chore` - Maintenance tasks
 
-### Examples
+**Examples:**
+```
+feat(quote): implement Quote aggregate with DDD patterns
+
+- Add Quote aggregate with business rules
+- Add Value Objects (QuoteId, Money, QuoteStatus)
+- Add Domain Events (QuoteDraftCreated, QuoteAccepted)
+- Add comprehensive unit tests (95% coverage)
+
+Closes #42
+```
+
+```
+test(quote): add integration tests for accept quote flow
+
+- Test event dispatching
+- Test cross-context communication (Quote → Project)
+- Test transaction rollback on failure
+
+Related to #42
+```
+
+---
+
+## 🔄 Pull Request Process
+
+### 1. Create Feature Branch
 
 ```bash
-feat(quotes): add PDF generation with watermark
+git checkout -b feature/quote-management
+```
 
-Implemented PDF generation for quotes using Puppeteer.
-Free tier includes watermark, Pro tier removes it.
+### 2. Make Changes
 
-Closes #16
+Follow coding standards and layer responsibilities.
+
+### 3. Write Tests
+
+```bash
+# Tests must pass
+./vendor/bin/pest
+
+# Coverage must be >= 80%
+./vendor/bin/pest --coverage --min=80
+```
+
+### 4. Update Documentation
+
+If you:
+- Add new feature → Update README.md
+- Make architectural decision → Create ADR
+- Change domain model → Update DOMAIN_ANALYSIS_EVENT_STORMING.md
+
+### 5. Push and Create PR
+
+```bash
+git push origin feature/quote-management
+```
+
+Create PR on GitHub with:
+- Clear description
+- Reference to issue (#42)
+- Screenshots (if UI changes)
+- Testing checklist
+
+### 6. PR Review Checklist
+
+Reviewers will check:
+
+**Architecture:**
+- [ ] Follows DDD patterns
+- [ ] Domain layer is pure PHP
+- [ ] Events used for cross-context communication
+- [ ] Proper layer separation
+
+**Code Quality:**
+- [ ] Follows PSR-12 coding standards
+- [ ] No code duplication
+- [ ] Clear naming conventions
+- [ ] Adequate comments for complex logic
+
+**Testing:**
+- [ ] All tests pass
+- [ ] New code is tested
+- [ ] Coverage >= 80%
+- [ ] Architecture tests pass
+
+**Documentation:**
+- [ ] README updated (if needed)
+- [ ] ADR created (if architectural change)
+- [ ] Code comments for complex logic
 
 ---
 
-fix(clients): prevent duplicate email addresses
+## 🎨 Code Style
 
-Added unique constraint on email field and proper
-validation error handling.
+### PSR-12 Standards
 
-Fixes #23
+```bash
+# Check style
+./vendor/bin/phpcs
+
+# Auto-fix
+./vendor/bin/phpcbf
+```
+
+### Naming Conventions
+
+**Aggregates:**
+```php
+class Quote extends AggregateRoot  // Singular noun
+```
+
+**Value Objects:**
+```php
+final class QuoteId extends Identifier  // Final, specific
+final class Money extends ValueObject
+```
+
+**Domain Events:**
+```php
+final class QuoteAccepted implements DomainEvent  // Past tense
+final class ProjectCreated implements DomainEvent
+```
+
+**Commands:**
+```php
+final class AcceptQuote  // Imperative, what to do
+final class CreateQuoteDraft
+```
+
+**Handlers:**
+```php
+class AcceptQuoteHandler  // Command + Handler suffix
+```
+
+**Repositories:**
+```php
+interface QuoteRepository  // Interface in Domain
+class EloquentQuoteRepository implements QuoteRepository  // Implementation in Infrastructure
+```
 
 ---
 
-docs(readme): update setup instructions for Laravel
+## 🐛 Bug Reports
 
-Added missing steps for database configuration and
-migration commands.
-```
+### Creating a Bug Report
 
-## 🎨 UI/UX Guidelines
+Use the [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md):
 
-### Design Principles
+**Include:**
+1. Description of the bug
+2. Steps to reproduce
+3. Expected behavior
+4. Actual behavior
+5. Environment details (PHP version, PostgreSQL version)
+6. Stack trace (if applicable)
 
-1. **Mobile First** - Design for mobile, enhance for desktop
-2. **Accessibility** - Follow WCAG 2.1 AA standards
-3. **Consistency** - Use the shared UI component library
-4. **Performance** - Optimize images, lazy load when possible
-5. **User Feedback** - Always show loading states and errors
+---
 
-### Component Library
+## 💡 Feature Requests
 
-Use the shared component library from `packages/ui`:
+### Creating a Feature Request
 
-```typescript
-// Good - using shared components
-import { Button, Input, Card } from '@buildflow/ui';
+Use the [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md):
 
-// Bad - creating custom components for common elements
-const MyCustomButton = () => { /* ... */ };
-```
+**Include:**
+1. Description of the feature
+2. Business value (why is it needed?)
+3. Proposed implementation (if you have ideas)
+4. Related domain context (Quote, Project, etc.)
+5. Impact on architecture
 
-## 📚 Documentation
+**Important:** Check [GitHub Roadmap](https://github.com/psswid/buildflow-docs/blob/main/BuildFlow_GitHub_Roadmap.md) first to see if feature is already planned.
 
-### Code Documentation
+---
 
-- Document complex functions with JSDoc/PHPDoc
-- Explain "why" not just "what"
-- Update README if you change setup process
-- Add examples for new features
+## 📖 Learning Resources
 
-### User Documentation
+### Domain-Driven Design
+- [Domain-Driven Design by Eric Evans](https://www.domainlanguage.com/ddd/)
+- [Implementing Domain-Driven Design by Vaughn Vernon](https://vaughnvernon.com/)
+- [Laravel Beyond CRUD](https://laravel-beyond-crud.com/)
 
-If your feature is user-facing:
-- Update the user guide
-- Add screenshots or GIFs
-- Write a tutorial if needed
-- Update FAQ if relevant
+### Event-Driven Architecture
+- [Domain Events (Martin Fowler)](https://martinfowler.com/eaaDev/DomainEvent.html)
+- [Event-Driven Microservices](https://microservices.io/patterns/data/event-driven-architecture.html)
 
-## 🏷️ Issue and PR Labels
+### CQRS
+- [CQRS by Martin Fowler](https://martinfowler.com/bliki/CQRS.html)
+- [Microsoft CQRS Journey](https://docs.microsoft.com/en-us/previous-versions/msp-n-p/jj554200(v=pandp.10))
 
-### Priority Labels
-- `priority: critical` - Must be fixed immediately
-- `priority: high` - Important, should be done soon
-- `priority: medium` - Normal priority
-- `priority: low` - Nice to have
+---
 
-### Type Labels
-- `type: feature` - New feature
-- `type: bug` - Bug fix
-- `type: docs` - Documentation
-- `type: refactor` - Code refactoring
+## ❓ Questions?
 
-### Status Labels
-- `status: ready` - Ready to be worked on
-- `status: in-progress` - Being worked on
-- `status: needs-review` - Needs code review
-- `status: blocked` - Blocked by dependencies
+- **Architecture Questions:** Check [ADRs](https://github.com/psswid/buildflow-docs/tree/main/docs/architecture/decisions)
+- **Domain Questions:** Check [Domain Analysis](https://github.com/psswid/buildflow-docs/blob/main/DOMAIN_ANALYSIS_EVENT_STORMING.md)
+- **Implementation Questions:** Check [Implementation Roadmap](https://github.com/psswid/buildflow-docs/blob/main/IMPLEMENTATION_ROADMAP.md)
+- **Other Questions:** Open a [Discussion](https://github.com/psswid/buildflow-laravel-api/discussions)
 
-### Other Labels
-- `good first issue` - Good for newcomers
-- `help wanted` - We need help with this
-- `stack: nextjs` - Next.js specific
-- `stack: laravel` - Laravel specific
-- `stack: symfony` - Symfony specific
-- `stack: agnostic` - Technology agnostic
+---
 
-## 🔍 Code Review Process
+## 🏆 Recognition
 
-### For Reviewers
+Contributors will be recognized in:
+- README.md Contributors section
+- Release notes
+- Project documentation
 
-- Be respectful and constructive
-- Test the changes locally
-- Check for edge cases
-- Verify documentation is updated
-- Approve or request changes with clear feedback
-
-### For Authors
-
-- Respond to all review comments
-- Make requested changes or explain why not
-- Re-request review after changes
-- Be patient and open to feedback
-
-## 🎯 Good First Issues
-
-New to the project? Look for issues with the `good first issue` label:
-
-- [Client Management - Tags & Categories](https://github.com/yourusername/buildflow/issues/14)
-- [Document Management - Document List](https://github.com/yourusername/buildflow/issues/27)
-- [Improved Error Messages](https://github.com/yourusername/buildflow/issues/50)
-
-## 🌍 Translation
-
-Help translate BuildFlow to other languages:
-
-1. Check `docs/translations/` for existing translations
-2. Copy `en.json` to your language code (e.g., `pl.json`)
-3. Translate all strings
-4. Submit a PR with your translation
-5. Add yourself to `docs/translations/TRANSLATORS.md`
-
-## 💬 Community
-
-- **Discord:** [Join our server](https://discord.gg/buildflow)
-- **GitHub Discussions:** Ask questions and share ideas
-- **Twitter:** [@buildflow_app](https://twitter.com/buildflow_app)
+---
 
 ## 📜 License
 
-By contributing to BuildFlow, you agree that your contributions will be licensed under the MIT License.
-
-## 🙏 Thank You!
-
-Your contributions make BuildFlow better for everyone. Whether you're fixing a typo, adding a feature, or helping with translations, we appreciate your help!
+By contributing, you agree that your contributions will be licensed under the MIT License.
 
 ---
 
-**Questions?** Open an issue!
+**Thank you for helping make BuildFlow better! 🚀**

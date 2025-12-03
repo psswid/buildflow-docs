@@ -1,268 +1,234 @@
-# BuildFlow
+# BuildFlow Documentation
 
-> Open-source business management system for construction and renovation businesses
+> **Central documentation repository for BuildFlow** - A construction business management system built with Laravel, DDD, Event-Driven Architecture, and CQRS patterns.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
-
----
-
-## 🎯 Vision
-
-BuildFlow empowers small construction businesses to operate with the professionalism of large enterprises. We replace scattered spreadsheets, emails, and paper notes with a unified platform that's accessible, affordable, and actually built for contractors.
-
----
-
-## ✨ Key Features
-
-### 📊 Core Functionality
-- **Client Management** - Centralized contact database with history
-- **Professional Quotes** - Beautiful PDFs in minutes, not hours
-- **Project Tracking** - Visual timelines and status updates
-- **Invoice Management** - Automatic calculations and payment tracking
-- **Document Storage** - Photos and files organized by project
-- **Client Portal** - Modern transparency that clients love (Pro tier)
-
-### 🎁 What Makes BuildFlow Different
-- **Forever Free Tier** - 3 projects, 10 clients, full features
-- **Mobile First** - Built for contractors who work on-site
-- **Technology Agnostic** - Multiple implementations (Next.js, Laravel, Symfony)
-- **Open Source** - Transparent, customizable, community-driven
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
+[![Status](https://img.shields.io/badge/Status-Phase%201-yellow.svg)](roadmap/github-issues.md)
 
 ---
 
 ## 🚀 Quick Start
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/buildflow.git
+**New here?** Start with these documents:
 
-# Choose your stack
-cd buildflow/apps/nextjs  # or /apps/laravel or /apps/symfony
-
-# Follow stack-specific setup instructions
-# See docs/setup/[nextjs|laravel|symfony].md
-```
+1. **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - Complete project context
+2. **[AI_AGENT_GUIDE.md](AI_AGENT_GUIDE.md)** - AI agent navigation guide
+3. **[Architecture Overview](architecture/ARCHITECTURE.md)** - Technical architecture
+4. **[Getting Started Guide](implementation/getting-started-laravel.md)** - Start coding
 
 ---
 
-## 📚 Documentation
+## 📁 Repository Structure
+
+```
+buildflow-docs/
+├── 📄 PROJECT_OVERVIEW.md          # Complete project context ⭐
+├── 📄 AI_AGENT_GUIDE.md            # AI agent navigation ⭐
+├── 📄 ARCHITECTURE.md              # Complete architecture
+├── 📄 CONTRIBUTING.md              # How to contribute
+│
+├── 📂 business/                    # Business requirements & product vision
+├── 📂 domain/                      # Domain modeling (DDD)
+├── 📂 architecture/                # Architecture & ADRs
+│   └── decisions/                  # 14 Architecture Decision Records
+├── 📂 implementation/              # Implementation guides
+├── 📂 api/                         # API contract (OpenAPI)
+├── 📂 roadmap/                     # Project planning
+├── 📂 guides/                      # How-to guides
+└── 📂 meta/                        # Meta documentation
+```
+
+**For detailed structure, see:** [Repository Structure](meta/repository-structure-proposal.md)
+
+---
+
+## 🎯 What is BuildFlow?
+
+BuildFlow is an **open-source construction business management system** designed for small-to-medium construction and renovation businesses. It provides:
+
+- **Quote Management** - Professional quotes with versioning
+- **Project Tracking** - Active project management
+- **Invoice Management** - Automated invoicing
+- **Client Portal** - Client self-service interface
+- **Document Management** - Centralized file storage
+
+**Target Users:** Solo contractors and small construction businesses (1-10 employees)
+
+**Business Model:** Freemium SaaS with generous free tier
+
+---
+
+## 🏗️ Architecture
+
+BuildFlow uses **enterprise-grade patterns** for a Laravel-based system:
+
+### Core Patterns
+
+- **Domain-Driven Design (DDD)** - [ADR-011](architecture/decisions/011-domain-driven-design.md)
+  - Pure domain layer (no framework dependencies)
+  - Aggregates as consistency boundaries
+  - Value Objects for immutability
+
+- **Event-Driven Architecture** - [ADR-012](architecture/decisions/012-event-driven-architecture.md)
+  - Domain events for cross-context communication
+  - Event sourcing for audit trail
+  - Sagas for complex workflows
+
+- **CQRS (Basic)** - [ADR-013](architecture/decisions/013-cqrs-basic.md)
+  - Separate read and write models
+  - Projectors for read model updates
+  - Optimized queries
+
+### 8 Bounded Contexts
+
+1. QuoteManagement
+2. ProjectManagement
+3. InvoiceManagement
+4. ClientManagement
+5. DocumentManagement
+6. UserManagement
+7. ClientPortal
+8. NotificationManagement
+
+**See:** [Domain Documentation](domain/) | [Architecture Details](architecture/ARCHITECTURE.md)
+
+---
+
+## 🗺️ Current Status
+
+**Phase:** 1 of 5 (Quote Management - Showcase) 🚧
+
+**Focus:** Building Quote aggregate with full DDD patterns as showcase implementation
+
+**Progress:**
+- ✅ Phase 0: Foundation (Documentation, ADRs, Planning)
+- 🚧 Phase 1: Quote Management (Current)
+- ⏳ Phase 2: Event-Driven Communication
+- ⏳ Phase 3: CQRS Implementation
+- ⏳ Phase 4-5: Complete & Polish
+
+**See:** [Implementation Roadmap](implementation/roadmap.md) | [GitHub Issues](roadmap/github-issues.md)
+
+---
+
+## 🚀 For Developers
 
 ### Getting Started
-- [Project Overview](docs/overview.md) - Understanding BuildFlow
-- [Business Requirements](docs/business/requirements.md) - Complete feature specifications
-- [Setup Guide](docs/setup/README.md) - Installation for each stack
 
-### For Developers
-- [Architecture](docs/technical/architecture.md) - System design and patterns
-- [Data Model](docs/technical/data-model.md) - Database schema and relationships
-- [API Documentation](docs/api/README.md) - RESTful API reference
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute
+1. **Read:** [Project Overview](PROJECT_OVERVIEW.md)
+2. **Understand:** [Architecture](architecture/ARCHITECTURE.md)
+3. **Build:** [Getting Started Guide](implementation/getting-started-laravel.md)
+4. **Test:** [Testing Strategy](implementation/testing-strategy.md)
 
-### For Product Managers
-- [User Stories](docs/product/user-stories.md) - All user stories and use cases
-- [Roadmap](docs/roadmap/github-roadmap.md) - Development phases and milestones
-- [Success Metrics](docs/product/metrics.md) - KPIs and success criteria
+### Development Approach
 
-### For Users
-- [User Guide](docs/user-guide/README.md) - How to use BuildFlow
-- [FAQ](docs/user-guide/faq.md) - Frequently asked questions
-- [Video Tutorials](docs/user-guide/tutorials.md) - Step-by-step guides
+- **TDD First** - Write tests before implementation
+- **Domain Pure** - No Laravel in domain layer
+- **Event-Driven** - Use domain events for communication
+- **80%+ Coverage** - High test coverage required
 
----
+### Tech Stack
 
-## 🏗️ Project Structure
-
-```
-buildflow/
-├── apps/                    # Multiple stack implementations
-│   ├── nextjs/             # Next.js implementation
-│   ├── laravel/            # Laravel implementation
-│   └── symfony/            # Symfony implementation
-│
-├── packages/               # Shared packages
-│   ├── ui/                # UI components library
-│   ├── types/             # TypeScript types
-│   └── utils/             # Shared utilities
-│
-├── docs/                  # Documentation
-│   ├── business/          # Business requirements
-│   ├── technical/         # Technical documentation
-│   ├── product/           # Product documentation
-│   ├── roadmap/           # Development roadmap
-│   ├── setup/             # Setup guides
-│   └── user-guide/        # User documentation
-│
-├── .github/               # GitHub specific files
-│   ├── workflows/         # CI/CD workflows
-│   ├── ISSUE_TEMPLATE/    # Issue templates
-│   └── PULL_REQUEST_TEMPLATE.md
-│
-└── scripts/               # Utility scripts
-```
+- **Backend:** Laravel 11.x (PHP 8.3+)
+- **Database:** PostgreSQL 16
+- **Testing:** Pest PHP
+- **API:** OpenAPI 3.0
+- **Frontend:** React (separate repo)
 
 ---
 
-## 💰 Pricing
+## 🤖 For AI Agents
 
-### Starter (Free Forever)
-- 3 active projects
-- 10 clients
-- 5 quotes/month
-- 3 invoices/month
-- 100 MB storage
-- All core features
+This repository is optimized for AI coding assistants (OpenCode, Claude Code, Cursor).
 
-### Professional ($19-29/month)
-- 20 active projects
-- 100 clients
-- 50 quotes/month
-- 30 invoices/month
-- 10 GB storage
-- **Client portal access**
-- Branded PDFs
-- Advanced analytics
+**Essential Files to Load:**
+1. [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) - Complete context
+2. [AI_AGENT_GUIDE.md](AI_AGENT_GUIDE.md) - Navigation guide
+3. Task-specific documents from guide
 
-### Business ($49-79/month)
-- Unlimited projects & clients
-- Unlimited quotes & invoices
-- 100 GB storage
-- 10 team members
-- **Team collaboration**
-- **API access**
-- SMS notifications
-- Priority support
+**See:** [AI Agent Guide](AI_AGENT_GUIDE.md) for detailed navigation instructions.
 
 ---
 
-## 🎯 Target Users
+## 📚 Key Documentation
 
-### Solo Contractor Sam
-35-50 years old, works alone or with 1-2 helpers, does 20-50 projects/year. Needs to look professional without spending hours on admin work.
+### Business & Product
+- [Business Requirements](business/requirements.md) - Complete requirements (~45KB)
+- [User Personas](business/requirements.md#user-personas) - Solo Sam, Growing Grace
 
-### Growing Business Grace
-30-45 years old, team of 3-8 employees, 50-200 projects/year. Needs team collaboration and client transparency to scale efficiently.
+### Domain Modeling
+- [Event Storming](domain/event-storming.md) - Domain events and aggregates
+- [Bounded Contexts](domain/event-storming.md#bounded-contexts) - 8 contexts detailed
 
----
+### Architecture Decisions
+- [ADR Summary](architecture/decisions/SUMMARY.md) - All 14 ADRs indexed
+- [Laravel-First Strategy](architecture/decisions/014-laravel-first-strategy.md) - Why Laravel
+- [Domain-Driven Design](architecture/decisions/011-domain-driven-design.md) - DDD patterns
+- [Event-Driven Architecture](architecture/decisions/012-event-driven-architecture.md) - Events
+- [CQRS Basic](architecture/decisions/013-cqrs-basic.md) - Read/write separation
 
-## 📅 Development Roadmap
+### Implementation
+- [10-Week Roadmap](implementation/roadmap.md) - Detailed plan
+- [Getting Started with Laravel](implementation/getting-started-laravel.md) - Step-by-step TDD
+- [Testing Strategy](implementation/testing-strategy.md) - Test approach
 
-### Phase 1: MVP (Months 1-3) ✅ Current Phase
-- Core features: Clients, Quotes, Projects, Invoices, Documents
-- Professional PDF generation
-- Basic dashboard
-- Email notifications
-
-### Phase 2: Client Portal (Months 4-6)
-- Client authentication and portal
-- Project status visibility for clients
-- Photo sharing and messaging
-- Quote/invoice templates
-
-### Phase 3: Analytics & Team (Months 7-9)
-- Advanced reporting
-- Multi-user support with RBAC
-- Team collaboration features
-- Calendar and scheduling
-
-### Phase 4: Integrations (Months 10-12)
-- Payment processing (Stripe)
-- Accounting software integration
-- Public API
-- White-label options
-
-See [detailed roadmap](docs/roadmap/github-roadmap.md) for complete issue breakdown.
+### API
+- [OpenAPI Specification](api-contract/openapi.yaml) - Complete API contract
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! BuildFlow is built by contractors, for contractors.
-
-### Ways to Contribute
-- 🐛 Report bugs
-- 💡 Suggest features
-- 📝 Improve documentation
-- 💻 Submit pull requests
-- 🌍 Translate to other languages
-- ⭐ Star the project
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Good First Issues
-Look for issues tagged with `good first issue` - perfect for newcomers!
-
----
-
-## 🛠️ Tech Stacks
-
-BuildFlow supports multiple technology implementations:
-
-### Next.js (TypeScript)
-- Next.js 14+ with App Router
-- React Server Components
-- Prisma ORM + PostgreSQL
-- Tailwind CSS + Shadcn/ui
-- NextAuth.js
-
-### Laravel (PHP)
-- Laravel 11+
-- Eloquent ORM + MySQL/PostgreSQL
-- Livewire + Alpine.js
-- Tailwind CSS
-- Laravel Sanctum
-
-### Symfony (PHP)
-- Symfony 7+
-- Doctrine ORM + PostgreSQL
-- Twig + Stimulus
-- Tailwind CSS
-- Symfony Security
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Setup instructions
+- Code standards
+- Testing requirements
+- PR process
 
 ---
 
 ## 📊 Project Stats
 
-- **Issues:** 70 planned features
-- **Milestones:** 5 phases over 10 months
-- **Target Users:** 10,000+ in year 1
-- **Contributors:** Open to all!
+- **Documentation:** ~260KB across 50+ files
+- **ADRs:** 14 architecture decisions documented
+- **Issues:** 70 issues planned across 5 phases
+- **Test Coverage Goal:** 80%+ overall, 90%+ domain layer
+
+---
+
+## 🔗 Related Repositories
+
+- **buildflow-docs** - This repository (documentation)
+- **buildflow-laravel-api** - Laravel backend implementation (planned)
+- **buildflow-react-web** - React frontend (planned)
 
 ---
 
 ## 📄 License
 
-BuildFlow is open source software licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+
+**Why Open Source?** See [ADR-006: Open Source MIT License](architecture/decisions/006-open-source-mit-license.md)
 
 ---
 
-## 🌟 Support the Project
+## 📮 Contact & Support
 
-- ⭐ Star this repository
-- 🐛 Report bugs and request features
-- 💬 Join discussions
-- 🔗 Share with other contractors
-- 💰 Sponsor development (coming soon)
+- **Author:** Piotr Świderski
+- **GitHub:** [@psswid](https://github.com/psswid)
+- **Issues:** [GitHub Issues](https://github.com/psswid/buildflow-docs/issues)
 
 ---
 
-## 📞 Contact & Community
+## 🎯 Project Goals
 
-- **Website:** [buildflow.dev](https://buildflow.dev) (coming soon)
-- **Twitter:** [@buildflow_app](https://twitter.com/buildflow_app) (coming soon)
-- **Discord:** [Join our community](https://discord.gg/buildflow) (coming soon)
-- **Email:** hello@buildflow.dev
+1. **Real Business Value** - Solve brother's construction business needs
+2. **Portfolio Showcase** - Demonstrate enterprise Laravel patterns
+3. **Learning Vehicle** - Master DDD, Events, CQRS in production context
 
----
-
-## 🙏 Acknowledgments
-
-Built with ❤️ by [Piotr Świderski](https://github.com/psswid)
-
-Inspired by the real needs of construction professionals, starting with [Prime Build Develop](https://www.primebuilddevelop.com/).
+**Current Focus:** Building Quote Management as exemplar implementation
 
 ---
 
-**Status:** 🚧 In Development - Phase 1 (MVP)  
-**Version:** 0.1.0  
-**Last Updated:** November 12, 2025
+**Ready to start?** → [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | [Getting Started](implementation/getting-started-laravel.md)
