@@ -1,23 +1,74 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: BuildFlow API
   version: 1.0.0
-  description: Construction Business Management System API
+  description: |
+    Construction Business Management System API
+    
+    BuildFlow provides a REST API for managing construction business operations including
+    quotes, projects, invoices, clients, and documents.
+    
+    ## Architecture
+    
+    - **Laravel-First:** Primary implementation in Laravel with DDD, Event-Driven, and CQRS patterns
+    - **Contract-First:** This OpenAPI spec is the single source of truth
+    - **Framework-Agnostic:** API design is independent of backend technology
+    
+    ## Authentication
+    
+    Uses JWT bearer tokens. Obtain a token via `/auth/login` and include in Authorization header:
+    ```
+    Authorization: Bearer <your-token>
+    ```
+    
+    ## Multi-Tenancy
+    
+    Row-level security ensures users only access their organization's data.
+    Tenant is determined from authenticated user's JWT token.
+    
+    ## Related Documentation
+    
+    - [API-First Approach](../architecture/decisions/002-api-first-approach.md)
+    - [Contract Testing Strategy](../architecture/decisions/008-contract-testing-strategy.md)
+    - [Architecture Overview](../architecture/ARCHITECTURE.md)
+  contact:
+    name: BuildFlow API Support
+    url: https://github.com/psswid/buildflow-docs
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 
 servers:
   - url: http://localhost:8000/api/v1
-    description: Laravel Development
-  - url: http://localhost:8001/api/v1
-    description: Symfony Development
-  - url: http://localhost:3000/api/v1
-    description: Next.js Development
+    description: Laravel Development Server
+  - url: https://api.buildflow.example.com/v1
+    description: Production (TBD)
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Clients
+    description: Client management operations
+  - name: Quotes
+    description: Quote creation and management
+  - name: Projects
+    description: Project tracking and management
+  - name: Invoices
+    description: Invoice generation and payment tracking
+  - name: Documents
+    description: File storage and management
+  - name: Users
+    description: User and team management
 
 paths:
   /auth/login:
     post:
       summary: User login
+      description: Authenticate user and receive JWT token
+      operationId: login
       tags: [Authentication]
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -27,9 +78,11 @@ paths:
                 email:
                   type: string
                   format: email
+                  example: contractor@example.com
                 password:
                   type: string
                   format: password
+                  example: SecurePassword123!
       responses:
         '200':
           description: Successful login
@@ -37,28 +90,79 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [token, user]
                 properties:
                   token:
                     type: string
+                    description: JWT bearer token
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                   user:
                     $ref: '#/components/schemas/User'
-                    
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/logout:
+    post:
+      summary: User logout
+      description: Invalidate current JWT token
+      operationId: logout
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      description: Get a new JWT token before current one expires
+      operationId: refreshToken
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: New token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token:
+                    type: string
+                    description: New JWT bearer token
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /clients:
     get:
       summary: List all clients
+      description: Retrieve paginated list of clients for current tenant
+      operationId: listClients
       tags: [Clients]
       security:
         - bearerAuth: []
       parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
         - in: query
-          name: page
+          name: search
+          description: Search by client name, email, or phone
           schema:
-            type: integer
+            type: string
+            example: John Smith
         - in: query
-          name: per_page
+          name: tag
+          description: Filter by tag
           schema:
-            type: integer
-            default: 20
+            type: string
+            example: commercial
       responses:
         '200':
           description: Successful response
@@ -66,6 +170,7 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [data, meta]
                 properties:
                   data:
                     type: array
@@ -73,23 +178,280 @@ paths:
                       $ref: '#/components/schemas/Client'
                   meta:
                     $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
     post:
       summary: Create a client
+      description: Create a new client for current tenant
+      operationId: createClient
       tags: [Clients]
       security:
         - bearerAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ClientInput'
       responses:
         '201':
-          description: Client created
+          description: Client created successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /clients/{clientId}:
+    get:
+      summary: Get client details
+      description: Retrieve detailed information about a specific client
+      operationId: getClient
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '200':
+          description: Client found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update client
+      description: Update an existing client's information
+      operationId: updateClient
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientInput'
+      responses:
+        '200':
+          description: Client updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      summary: Delete client
+      description: Soft delete a client (retains historical data)
+      operationId: deleteClient
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '204':
+          description: Client deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /quotes:
+    get:
+      summary: List quotes
+      description: Retrieve paginated list of quotes for current tenant
+      operationId: listQuotes
+      tags: [Quotes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - in: query
+          name: status
+          description: Filter by quote status
+          schema:
+            $ref: '#/components/schemas/QuoteStatus'
+        - in: query
+          name: client_id
+          description: Filter by client ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Quote'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create quote
+      description: Create a new quote in draft status
+      operationId: createQuote
+      tags: [Quotes]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteInput'
+      responses:
+        '201':
+          description: Quote created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /quotes/{quoteId}:
+    get:
+      summary: Get quote details
+      description: Retrieve detailed information about a specific quote
+      operationId: getQuote
+      tags: [Quotes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QuoteId'
+      responses:
+        '200':
+          description: Quote found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteDetailed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update quote
+      description: Update an existing quote (only allowed in draft status)
+      operationId: updateQuote
+      tags: [Quotes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QuoteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteInput'
+      responses:
+        '200':
+          description: Quote updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /quotes/{quoteId}/send:
+    post:
+      summary: Send quote to client
+      description: Send quote to client via email (changes status to sent)
+      operationId: sendQuote
+      tags: [Quotes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QuoteId'
+      responses:
+        '200':
+          description: Quote sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /quotes/{quoteId}/accept:
+    post:
+      summary: Accept quote
+      description: Accept quote and create project (changes status to accepted)
+      operationId: acceptQuote
+      tags: [Quotes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QuoteId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signature:
+                  type: string
+                  description: Client signature (base64)
+                  example: data:image/png;base64,iVBORw0KG...
+      responses:
+        '200':
+          description: Quote accepted, project created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [quote, project]
+                properties:
+                  quote:
+                    $ref: '#/components/schemas/Quote'
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
 
 components:
   securitySchemes:
@@ -97,64 +459,379 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      
+      description: JWT token obtained from /auth/login
+
+  parameters:
+    Page:
+      in: query
+      name: page
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+
+    PerPage:
+      in: query
+      name: per_page
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+
+    ClientId:
+      in: path
+      name: clientId
+      required: true
+      description: Client ID
+      schema:
+        type: integer
+      example: 123
+
+    QuoteId:
+      in: path
+      name: quoteId
+      required: true
+      description: Quote ID
+      schema:
+        type: integer
+      example: 456
+
   schemas:
     User:
       type: object
+      required: [id, email, name, role]
       properties:
         id:
           type: integer
+          example: 1
         email:
           type: string
+          format: email
+          example: contractor@example.com
         name:
           type: string
+          example: John Doe
         role:
           type: string
           enum: [owner, manager, field_worker]
-          
+          example: owner
+        organization_id:
+          type: integer
+          description: Tenant/organization ID
+          example: 42
+
     Client:
       type: object
+      required: [id, name, email, created_at, updated_at]
       properties:
         id:
           type: integer
+          example: 123
         name:
           type: string
+          example: John Smith
         email:
           type: string
+          format: email
+          example: john@example.com
         phone:
           type: string
+          example: "+1-555-123-4567"
         address:
           type: string
+          example: "123 Main St, Cityville, ST 12345"
         tags:
           type: array
           items:
             type: string
+          example: ["commercial", "repeat-customer"]
+        notes:
+          type: string
+          nullable: true
+          example: "Prefers morning appointments"
         created_at:
           type: string
           format: date-time
-          
+          example: "2024-12-03T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-12-03T10:30:00Z"
+
     ClientInput:
       type: object
       required: [name, email]
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 255
+          example: John Smith
         email:
           type: string
           format: email
+          example: john@example.com
         phone:
           type: string
+          nullable: true
+          example: "+1-555-123-4567"
         address:
           type: string
-          
+          nullable: true
+          example: "123 Main St, Cityville, ST 12345"
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          example: ["commercial", "repeat-customer"]
+        notes:
+          type: string
+          nullable: true
+          example: "Prefers morning appointments"
+
+    QuoteStatus:
+      type: string
+      enum: [draft, sent, accepted, declined, expired]
+      example: draft
+
+    Quote:
+      type: object
+      required: [id, quote_number, client_id, status, total, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          example: 456
+        quote_number:
+          type: string
+          example: "Q-2024-001"
+        client_id:
+          type: integer
+          example: 123
+        client:
+          $ref: '#/components/schemas/Client'
+        status:
+          $ref: '#/components/schemas/QuoteStatus'
+        title:
+          type: string
+          example: "Kitchen Renovation"
+        description:
+          type: string
+          nullable: true
+          example: "Complete kitchen remodel including cabinets and countertops"
+        subtotal:
+          type: number
+          format: decimal
+          example: 15000.00
+        tax:
+          type: number
+          format: decimal
+          example: 1200.00
+        total:
+          type: number
+          format: decimal
+          example: 16200.00
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+          example: "2024-12-31"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-12-03T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-12-03T10:30:00Z"
+
+    QuoteDetailed:
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+        - type: object
+          properties:
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuoteLineItem'
+
+    QuoteLineItem:
+      type: object
+      required: [id, description, quantity, unit_price, total]
+      properties:
+        id:
+          type: integer
+          example: 789
+        description:
+          type: string
+          example: "Custom kitchen cabinets"
+        quantity:
+          type: number
+          format: decimal
+          example: 10.0
+        unit:
+          type: string
+          example: "linear feet"
+        unit_price:
+          type: number
+          format: decimal
+          example: 150.00
+        total:
+          type: number
+          format: decimal
+          example: 1500.00
+
+    QuoteInput:
+      type: object
+      required: [client_id, title, line_items]
+      properties:
+        client_id:
+          type: integer
+          example: 123
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Kitchen Renovation"
+        description:
+          type: string
+          nullable: true
+          example: "Complete kitchen remodel"
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+          example: "2024-12-31"
+        line_items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [description, quantity, unit_price]
+            properties:
+              description:
+                type: string
+              quantity:
+                type: number
+                format: decimal
+              unit:
+                type: string
+                nullable: true
+              unit_price:
+                type: number
+                format: decimal
+
+    Project:
+      type: object
+      required: [id, project_number, quote_id, client_id, status, created_at]
+      properties:
+        id:
+          type: integer
+          example: 789
+        project_number:
+          type: string
+          example: "P-2024-001"
+        quote_id:
+          type: integer
+          example: 456
+        client_id:
+          type: integer
+          example: 123
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+          example: active
+        title:
+          type: string
+          example: "Kitchen Renovation"
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2024-12-10"
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2024-12-31"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-12-03T10:30:00Z"
+
     PaginationMeta:
       type: object
+      required: [current_page, per_page, total, last_page]
       properties:
         current_page:
           type: integer
+          example: 1
         per_page:
           type: integer
+          example: 20
         total:
           type: integer
+          example: 150
         last_page:
           type: integer
+          example: 8
+        from:
+          type: integer
+          nullable: true
+          example: 1
+        to:
+          type: integer
+          nullable: true
+          example: 20
+
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: "An error occurred"
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email: ["The email field is required."]
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Invalid or missing token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Unauthenticated"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Resource not found"
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "The given data was invalid"
+            errors:
+              email: ["The email field is required."]
+              name: ["The name field is required."]
