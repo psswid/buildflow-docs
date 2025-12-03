@@ -203,6 +203,23 @@ buildflow-docs/
 
 ---
 
+### "How do I add new API endpoint?"
+
+**Load Order:**
+1. `api-contract/openapi.yaml` - See existing patterns
+2. `api/README.md` - Understand structure
+3. `architecture/decisions/002-api-first-approach.md` - Methodology
+4. `architecture/decisions/008-contract-testing-strategy.md` - Testing
+
+**Steps:**
+1. Add endpoint to openapi.yaml FIRST (API-first!)
+2. Add schemas if needed
+3. Implement in Laravel
+4. Add contract tests
+5. Update api/README.md if major change
+
+---
+
 ## 🔍 Search Keywords by Topic
 
 ### Domain-Driven Design
